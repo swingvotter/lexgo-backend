@@ -1,11 +1,21 @@
 require("dotenv").config();
 const express = require("express");
+const cookieParser = require("cookie-parser");
 const app = express();
 const db = require("./db/db");
+const userRouter = require("./route/userRoute");
+const auth = require("./middleware/authMiddleware");
 
-app.get("/test", (req, res) => {
-  res.status(200).json({ message: "testing entry point" });
+//MIDDLEWARES START HERE
+app.use(express.json());
+app.use(cookieParser());
+
+app.get("/protected", auth, (req, res) => {
+  res.status(200).json({ message: "this is a protected route" });
 });
+
+//ROUTE HANDLERS
+app.use("/api/Auth", userRouter);
 
 const port = process.env.PORT || 60000;
 app.listen(port, () => {
