@@ -32,7 +32,6 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
   },
-  token: { type: String },
   role: {
     type: String,
     enum: ["student", "lecturer"],
@@ -53,13 +52,14 @@ const userSchema = new mongoose.Schema({
     learningStreak: { type: Number, default: 0 },
     lastActiveDate: { type: Date },
   },
+
   notes: [
     {
-      title: String,
-      content: String,
-      createdAt: { type: Date, default: Date.now },
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Note", // reference to courses in the Course collection
     },
   ],
+
   createdAt: {
     type: Date,
     default: Date.now,

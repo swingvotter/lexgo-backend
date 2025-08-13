@@ -5,6 +5,7 @@ const app = express();
 const db = require("./db/db");
 const userRouter = require("./route/userRoute");
 const auth = require("./middleware/authMiddleware");
+const noteRouter = require("./route/noteRoute");
 
 //MIDDLEWARES START HERE
 app.use(express.json());
@@ -16,6 +17,7 @@ app.get("/protected", auth, (req, res) => {
 
 //ROUTE HANDLERS
 app.use("/api/Auth", userRouter);
+app.use("/api/Note", noteRouter);
 
 const port = process.env.PORT || 60000;
 app.listen(port, () => {
