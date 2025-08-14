@@ -42,13 +42,19 @@ const registerUser = async (req, res) => {
 
     const hashPassword = await bcrypt.hash(password, 10);
 
-    const user = await User.create({
+    const newUserData = {
       fullName,
       email,
       password: hashPassword,
-      studentId: role === "student" ? studentId : null,
       role: role || "student",
-    });
+    };
+
+    // Only set studentId if role is student
+    if ((role || "student") === "student") {
+      newUserData.studentId = studentId;
+    }
+
+    const user = await User.create(newUserData);
 
     return res.status(201).json({
       success: true,

@@ -9,8 +9,7 @@ const userSchema = new mongoose.Schema({
   },
   studentId: {
     type: String,
-    unique: true,
-    sparse: true, // avoids unique index conflicts when field is null
+    // uniqueness is enforced only for students via a partial index below
     validate: {
       validator: function (value) {
         // Only require studentId if role is "student"
@@ -34,7 +33,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["student", "lecturer"],
+    enum: ["student", "lecturer", "admin"],
     default: "student",
   },
   onboardingCompleted: {
@@ -65,6 +64,11 @@ const userSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+// Enforce unique studentId only for users whose role is student
+userSchema.index(
+  { studentId: 1 },
+  { unique: true, partialFilterExpression: { role: "student" } }
+);
 
 const user = mongoose.model("user", userSchema);
 module.exports = user;
