@@ -52,6 +52,12 @@ const userSchema = new mongoose.Schema({
     lastActiveDate: { type: Date },
   },
 
+  // Number of AI questions asked by the user
+  askAI: {
+    type: Number,
+    default: 0,
+  },
+
   notes: [
     {
       type: mongoose.Schema.Types.ObjectId,

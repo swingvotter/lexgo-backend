@@ -111,6 +111,30 @@ const loginUser = async (req, res) => {
 
     const userId = user._id;
 
+    // Update learning streak on successful login
+    const today = new Date();
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const lastActive = user.lastActiveDate ? new Date(user.lastActiveDate) : null;
+
+    let newLearningStreak = user.learningStreak || 0;
+    if (!lastActive) {
+      newLearningStreak = 1;
+    } else {
+      const startOfLastActive = new Date(lastActive.getFullYear(), lastActive.getMonth(), lastActive.getDate());
+      const diffDays = Math.round((startOfToday - startOfLastActive) / (1000 * 60 * 60 * 24));
+      if (diffDays === 0) {
+        // Already logged in today; keep streak
+      } else if (diffDays === 1) {
+        newLearningStreak += 1;
+      } else {
+        newLearningStreak = 1;
+      }
+    }
+
+    user.learningStreak = newLearningStreak;
+    user.lastActiveDate = startOfToday;
+    await user.save();
+
     const accessToken = getAccessToken(userId);
     const refreshToken = getRefreshToken(userId);
 
@@ -197,4 +221,24 @@ const refreshAccessToken = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, refreshAccessToken, logoutUser };
+/* INCREMENT ASK_AI COUNTER */
+const incrementAskAI = async (req, res) => {
+  try {
+    const userId = req.userInfo && req.userInfo.id;
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $inc: { askAI: 1 } },
+      { new: true }
+    ).select("askAI");
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({ success: true, askAI: user.askAI });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message || "Server error" });
+  }
+};
+
+module.exports = { registerUser, loginUser, refreshAccessToken, logoutUser, incrementAskAI };
