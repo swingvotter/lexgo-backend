@@ -48,13 +48,28 @@ const createNote = async (req, res) => {
 const getAllNotes = async (req, res) => {
   try {
     const userId = req.userInfo && req.userInfo.id;
-    const notes = await Note.find({ user: userId }).sort({ createdAt: -1 });
+
+    const page = Number(req.query.page) || 1;
+    let limit = Number(req.query.limit) || 30;
+
+    if (limit > 30) limit = 30;
+
+    const skip = Number((page - 1) * limit);
+    const totalNotes = await Note.countDocuments({ user: userId });
+    const totalPages = Math.ceil(totalNotes / limit);
+
+    const notes = await Note.find({ user: userId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     return res.status(200).json({
       success: true,
       message: "notes fetched successfully",
       notes,
-      totalNotes: notes.length,
+      totalNotes,
+      totalPages,
+      currentPage: page,
     });
   } catch (error) {
     return res.status(500).json({

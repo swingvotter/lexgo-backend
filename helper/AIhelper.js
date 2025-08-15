@@ -9,7 +9,12 @@ const generateAISummary = async (legalPrinciples) => {
 
   const joinedPrinciples = legalPrinciples
     .filter(Boolean)
-    .map((p) => String(p))
+    .map((principle) => {
+      if (typeof principle === 'object' && principle.content) {
+        return principle.content;
+      }
+      return String(principle);
+    })
     .join("\n- ");
 
   const prompt = `Summarize the following legal principles into a concise, plain-English paragraph (3-6 sentences). Avoid repetition and focus on the core holdings and rules. If multiple principles overlap, merge them logically.\n\nLegal principles:\n- ${joinedPrinciples}`;

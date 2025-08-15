@@ -10,7 +10,13 @@ const caseSchema = new mongoose.Schema({
     landmark: { type: Boolean, default: false },
   },
   legalIssue: [{ type: String, required: true }],
-  legalPrinciple: [{ type: String, required: true }],
+  legalPrinciple: [
+    {
+      title: { type: String, required: true },
+      content: { type: String, required: true },
+    },
+  ],
+  areaOfLaw: { type: String },
 });
 
 module.exports = mongoose.model("Case", caseSchema);

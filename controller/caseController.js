@@ -4,7 +4,7 @@ const generateAISummary = require("../helper/AIhelper");
 /* CREATE CASE */
 const createCase = async (req, res) => {
   try {
-    const { title, citation, legalIssue, legalPrinciple } = req.body;
+    const { title, citation, legalIssue, legalPrinciple, areaOfLaw } = req.body;
 
     if (
       !title ||
@@ -47,6 +47,7 @@ const createCase = async (req, res) => {
       citation,
       legalIssue,
       legalPrinciple,
+      areaOfLaw,
     });
 
     return res.status(201).json({
@@ -99,11 +100,12 @@ const getSingleCase = async (req, res) => {
 /* UPDATE CASE */
 const updateCase = async (req, res) => {
   const { id } = req.params;
-  const { title, legalIssue, legalPrinciple } = req.body;
+  const { title, legalIssue, legalPrinciple, areaOfLaw } = req.body;
   try {
     const updates = {};
     if (title !== undefined) updates.title = title;
     if (legalIssue !== undefined) updates.legalIssue = legalIssue;
+    if (areaOfLaw !== undefined) updates.areaOfLaw = areaOfLaw;
 
     // Support partial updates for citation via either nested object or dot-paths
     const allowedCitationFields = ["year", "lawReport", "page", "landmark"];
