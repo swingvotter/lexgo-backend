@@ -1,5 +1,5 @@
 const Case = require("../model/caseModel");
-const generateAISummary = require("../helper/AIhelper");
+const { generateAISummary, generateQuizQuestions } = require("../helper/AIhelper");
 
 /* CREATE CASE */
 const createCase = async (req, res) => {
@@ -183,10 +183,200 @@ const deleteCase = async (req, res) => {
   }
 };
 
+/* GENERATE QUIZ FOR CASE */
+const generateQuiz = async (req, res) => {
+  const { id } = req.params;
+  const { numQuizGenerated } = req.body;
+
+  try {
+    // Validate numQuizGenerated
+    if (!numQuizGenerated || typeof numQuizGenerated !== 'number' || numQuizGenerated < 1 || numQuizGenerated > 50) {
+      return res.status(400).json({
+        success: false,
+        message: "numQuizGenerated must be a number between 1 and 50",
+      });
+    }
+
+    // Find the case
+    const caseData = await Case.findById(id);
+    if (!caseData) {
+      return res.status(404).json({
+        success: false,
+        message: "Case not found",
+      });
+    }
+
+    // Check if case has legal principles
+    if (!caseData.legalPrinciple || caseData.legalPrinciple.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Case must have legal principles to generate quiz",
+      });
+    }
+
+    // Check if quiz already exists for this case
+    if (caseData.quiz && caseData.quiz.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Quiz already exists for this case. Use the get quiz endpoint to retrieve it.",
+        existingQuiz: {
+          numQuestions: caseData.quiz.length,
+          numQuizGenerated: caseData.numQuizGenerated
+        }
+      });
+    }
+
+    // Check OpenAI API key
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        message: "OPENAI_API_KEY is not configured on the server",
+      });
+    }
+
+    // Generate quiz questions
+    const quizQuestions = await generateQuizQuestions(caseData.legalPrinciple, numQuizGenerated);
+
+    // Update the case with the generated quiz
+    const updatedCase = await Case.findByIdAndUpdate(
+      id,
+      {
+        quiz: quizQuestions,
+        numQuizGenerated: numQuizGenerated
+      },
+      { new: true, runValidators: true }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Quiz generated successfully",
+      quiz: updatedCase.quiz,
+      numQuizGenerated: updatedCase.numQuizGenerated,
+      caseTitle: updatedCase.title
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Server error",
+    });
+  }
+};
+
+/* GET QUIZ FOR CASE */
+const getQuiz = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Find the case and only return quiz-related fields
+    const caseData = await Case.findById(id).select('title quiz numQuizGenerated');
+    
+    if (!caseData) {
+      return res.status(404).json({
+        success: false,
+        message: "Case not found",
+      });
+    }
+
+    // Check if quiz exists
+    if (!caseData.quiz || caseData.quiz.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No quiz found for this case. Generate quiz first.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      quiz: caseData.quiz,
+      numQuizGenerated: caseData.numQuizGenerated,
+      caseTitle: caseData.title,
+      totalQuestions: caseData.quiz.length
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Server error",
+    });
+  }
+};
+
+/* REGENERATE QUIZ FOR CASE */
+const regenerateQuiz = async (req, res) => {
+  const { id } = req.params;
+  const { numQuizGenerated } = req.body;
+
+  try {
+    // Validate numQuizGenerated
+    if (!numQuizGenerated || typeof numQuizGenerated !== 'number' || numQuizGenerated < 1 || numQuizGenerated > 50) {
+      return res.status(400).json({
+        success: false,
+        message: "numQuizGenerated must be a number between 1 and 50",
+      });
+    }
+
+    // Find the case
+    const caseData = await Case.findById(id);
+    if (!caseData) {
+      return res.status(404).json({
+        success: false,
+        message: "Case not found",
+      });
+    }
+
+    // Check if case has legal principles
+    if (!caseData.legalPrinciple || caseData.legalPrinciple.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Case must have legal principles to generate quiz",
+      });
+    }
+
+    // Check OpenAI API key
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        message: "OPENAI_API_KEY is not configured on the server",
+      });
+    }
+
+    // Generate new quiz questions
+    const quizQuestions = await generateQuizQuestions(caseData.legalPrinciple, numQuizGenerated);
+
+    // Update the case with the new quiz (replacing existing one)
+    const updatedCase = await Case.findByIdAndUpdate(
+      id,
+      {
+        quiz: quizQuestions,
+        numQuizGenerated: numQuizGenerated
+      },
+      { new: true, runValidators: true }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Quiz regenerated successfully",
+      quiz: updatedCase.quiz,
+      numQuizGenerated: updatedCase.numQuizGenerated,
+      caseTitle: updatedCase.title
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Server error",
+    });
+  }
+};
+
 module.exports = {
   createCase,
   getAllCases,
   getSingleCase,
   updateCase,
   deleteCase,
+  generateQuiz,
+  getQuiz,
+  regenerateQuiz,
 };

@@ -17,6 +17,14 @@ const caseSchema = new mongoose.Schema({
     },
   ],
   areaOfLaw: { type: String },
+  quiz: [
+    {
+      question: { type: String },
+      answers: [{ type: String }],
+      correctAnswer: { type: String },
+    },
+  ],
+  numQuizGenerated: { type: Number },
 });
 
 module.exports = mongoose.model("Case", caseSchema);
